@@ -2,9 +2,9 @@ import express from "express";
 import morgan from "morgan";
 import cors from "cors";
 
-import clienteRoutes from "./routes/clienteRoutes.js";
-import barberoRoutes from "./routes/barberoRoutes.js";
-import turnoRoutes from "./routes/turnoRoutes.js";
+import clienteRoutes from "./Routes/clienteRoutes.js";
+import barberoRoutes from "./Routes/barberoRoutes.js";
+import turnoRoutes from "./Routes/turnoRoutes.js";
 
 // Inicialización de Express
 const app = express();
