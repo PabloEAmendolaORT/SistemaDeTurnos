@@ -30,3 +30,12 @@ export async function crearCliente(cliente) {
 
     return await db.collection("clientes").insertOne(cliente);
 }
+
+export async function crearIndiceEmailClientes() {
+    const db = getDB();
+
+    return await db.collection("clientes").createIndex(
+        { email: 1 },
+        { unique: true }
+    );
+}
