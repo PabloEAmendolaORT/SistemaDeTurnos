@@ -31,6 +31,23 @@ export async function crearCliente(cliente) {
     return await db.collection("clientes").insertOne(cliente);
 }
 
+export async function actualizarClientePorId(id, cambios) {
+    const db = getDB();
+
+    return await db.collection("clientes").updateOne(
+        {
+            _id: new ObjectId(id),
+            activo: true
+        },
+        {
+            $set: {
+                ...cambios,
+                updatedAt: new Date()
+            }
+        }
+    );
+}
+
 export async function crearIndiceEmailClientes() {
     const db = getDB();
 
