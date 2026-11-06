@@ -6,6 +6,7 @@ import cors from "cors";
 import clienteRoutes from "./Routes/clienteRoutes.js";
 import barberoRoutes from "./Routes/barberoRoutes.js";
 import turnoRoutes from "./Routes/turnoRoutes.js";
+import authRoutes from "./Routes/authRoutes.js";
 
 import { errorMiddleware } from "./Middlewares/error.middleware.js";
 
@@ -23,6 +24,7 @@ app.get("/", (req, res) => {
 });
 
 // Rutas de la API
+app.use("/api/auth", authRoutes);
 app.use("/api/clientes", clienteRoutes);
 app.use("/api/barberos", barberoRoutes);
 app.use("/api/turnos", turnoRoutes);
