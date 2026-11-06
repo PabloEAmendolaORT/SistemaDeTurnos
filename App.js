@@ -3,14 +3,13 @@ import express from "express";
 import morgan from "morgan";
 import cors from "cors";
 
+import authRoutes from "./Routes/authRoutes.js";
 import clienteRoutes from "./Routes/clienteRoutes.js";
 import barberoRoutes from "./Routes/barberoRoutes.js";
 import turnoRoutes from "./Routes/turnoRoutes.js";
-import authRoutes from "./Routes/authRoutes.js";
 
 import { errorMiddleware } from "./Middlewares/error.middleware.js";
 
-// Inicialización de Express
 const app = express();
 
 // Middlewares globales
@@ -23,7 +22,7 @@ app.get("/", (req, res) => {
     res.send("API Sistema de Turnos - Barbería");
 });
 
-// Rutas de la API
+// Rutas
 app.use("/api/auth", authRoutes);
 app.use("/api/clientes", clienteRoutes);
 app.use("/api/barberos", barberoRoutes);

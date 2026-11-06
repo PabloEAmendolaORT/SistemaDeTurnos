@@ -2,31 +2,31 @@
 import { ObjectId } from "mongodb";
 import { getDB } from "../Config/database.js";
 
-function coleccionClientes() {
-    return getDB().collection("clientes");
-}
-
 export async function obtenerClientePorEmail(email) {
-    return coleccionClientes().findOne({ email });
+    const db = getDB();
+
+    return await db.collection("clientes").findOne({
+        email: email
+    });
 }
 
 export async function obtenerClientePorId(id) {
-    if (typeof id !== "string" || !/^[a-f\d]{24}$/i.test(id)) {
+    if (
+        typeof id !== "string" ||
+        !/^[a-fA-F0-9]{24}$/.test(id)
+    ) {
         return null;
     }
 
-    return coleccionClientes().findOne({
+    const db = getDB();
+
+    return await db.collection("clientes").findOne({
         _id: new ObjectId(id)
     });
 }
 
 export async function crearCliente(cliente) {
-    return coleccionClientes().insertOne(cliente);
-}
+    const db = getDB();
 
-export async function crearIndiceEmailClientes() {
-    return coleccionClientes().createIndex(
-        { email: 1 },
-        { unique: true, name: "email_unico" }
-    );
+    return await db.collection("clientes").insertOne(cliente);
 }
