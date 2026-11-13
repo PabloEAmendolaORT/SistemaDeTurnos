@@ -29,3 +29,31 @@ export async function actualizarHorariosBarbero(id, horarios) {
         { $set: { horarios } }
     );
 }
+
+export async function agregarBloqueoBarbero(id, bloqueo) {
+    const db = getDB();
+
+    return await db.collection("barberos").updateOne(
+        { _id: new ObjectId(id), 
+            turnos: { 
+                $not: {
+                    $elemMatch: {
+                        estado: { $in: ["pendiente", "confirmado"] },
+                        inicio: { $lt: bloqueo.fin },
+                        fin: { $gt: bloqueo.inicio}
+                    }
+                }
+            } 
+        },
+        { $push: { bloqueos: bloqueo } }
+    );
+}
+
+export async function obtenerBarberoActivo(id) {
+    const db = getDB();
+
+    return await db.collection("barberos").findOne(
+        { _id: new ObjectId(id), activo: true },
+        { projection: { password: 0 } }
+    );
+}

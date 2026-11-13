@@ -1,4 +1,4 @@
-import { actualizarHorariosBarberoService, listarBarberosService, obtenerBarberoPorIdService } from "../Services/barberoService.js";
+import { actualizarHorariosBarberoService, agregarBloqueoBarberoService, listarBarberosService, obtenerBarberoPorIdService } from "../Services/barberoService.js";
 
 export async function listarBarberosController(req, res, next) {
     try {
@@ -33,6 +33,23 @@ export async function actualizarHorariosBarberoController(req, res, next) {
         return res.status(200).json({
             message: "Horarios actualizados correctamente.",
             data: horarios
+        });
+    } catch (error) {
+        next(error);
+    }
+}
+
+export async function agregarBloqueoBarberoController(req, res, next) {
+    try {
+        const bloqueo = await agregarBloqueoBarberoService(
+            req.params.id,
+            req.user,
+            req.body
+        );
+
+        return res.status(201).json({
+            message: "Bloqueo agregado correctamente.",
+            data: bloqueo
         });
     } catch (error) {
         next(error);
