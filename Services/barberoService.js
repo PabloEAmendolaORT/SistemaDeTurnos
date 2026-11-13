@@ -1,6 +1,6 @@
-import { listarBarberosActivos, obtenerBarberoPorId, actualizarHorariosBarbero, agregarBloqueoBarbero } from "../Data/barberoData.js";
+import { listarBarberosActivos, obtenerBarberoPorId, actualizarHorariosBarbero, agregarBloqueoBarbero, obtenerAgendaBarbero } from "../Data/barberoData.js";
 import { ObjectId } from "mongodb";
-import { esIdValido, esHoraValida, seSuperponen } from "./turnoUtils.js";
+import { esIdValido, esHoraValida, seSuperponen, esFechaValida, construirFecha } from "./turnoUtils.js";
 
 export async function listarBarberosService() {
     const barberos = await listarBarberosActivos();
@@ -127,4 +127,34 @@ export async function agregarBloqueoBarberoService(id, usuario, datos) {
 
     return bloqueo;
 
+}
+
+export async function obtenerAgendaBarberoService(id, usuario, fecha) {
+    if (!esIdValido(id)) {
+        throw { status: 400, message: "El identificador del barbero no es válido." };
+    }
+
+    if (usuario?.rol !== "barbero" || usuario.id.toLowerCase() !== id.toLowerCase()) {
+        throw { status: 403, message: "Solo podés consultar tu propia agenda." };
+    }
+
+    if (!esFechaValida(fecha)) {
+        throw {
+            status: 400,
+            message: "La fecha de la agenda debe ser válida y tener formato YYYY-MM-DD."
+        };
+    }
+
+    const desde = construirFecha(fecha, "00:00");
+
+    const hasta = new Date(desde.getTime());
+    hasta.setUTCDate(hasta.getUTCDate() + 1);
+
+    const agenda = await obtenerAgendaBarbero(id, desde, hasta);
+
+    if (!agenda) {
+        throw { status: 404, message: "Barbero no encontrado." };
+    }
+
+    return agenda;
 }
