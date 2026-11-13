@@ -49,6 +49,30 @@ export async function agregarBloqueoBarbero(id, bloqueo) {
     );
 }
 
+export async function obtenerAgendaBarbero(id, desde, hasta) {
+    const db = getDB();
+
+    const [agenda] = await db.collection("barberos").aggregate([
+        { $match: { _id: new ObjectId(id) } },
+        { $project: {
+            turnos: {
+                $filter: {
+                    input: { $ifNull: ["$turnos", []]},
+                    as: "turno",
+                    cond: {
+                        $and: [
+                            { $gte: ["$$turno.inicio", desde] },
+                            { $lt: ["$$turno.inicio", hasta] }
+                        ]
+                    }
+                }
+            }
+        }}
+    ]).toArray();
+
+    return agenda ?? null;
+}
+
 export async function obtenerBarberoActivo(id) {
     const db = getDB();
 
