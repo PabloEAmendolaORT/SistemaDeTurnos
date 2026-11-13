@@ -47,3 +47,12 @@ export async function actualizarClientePorId(id, cambios) {
         }
     );
 }
+
+export async function crearIndiceEmailClientes() {
+    const db = getDB();
+
+    return await db.collection("clientes").createIndex(
+        { email: 1 },
+        { unique: true }
+    );
+}
