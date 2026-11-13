@@ -1,18 +1,19 @@
 import { obtenerClientePorId } from "../Data/clienteData.js";
-import { obtenerBarberoActivo } from "../Data/barberoData.js";
 import {
     DURACION_TURNO_MINUTOS,
     nuevoTurno,
+    obtenerBarberoActivo,
+    obtenerBarberoPorTurnoId,
     reservarTurnoAtomico,
     existeTurnoActivoDelCliente
 } from "../Data/turnoData.js";
-import { estaEnHorarioLaboral } from "./barberoService.js";
 import {
     crearError,
     esIdValido,
     esFechaValida,
     esHoraValida,
     construirFecha,
+    estaEnHorarioLaboral,
     generarSlots
 } from "./turnoUtils.js";
 
@@ -51,7 +52,7 @@ export async function reservarTurno(usuario, { barberoId, fecha, hora } = {}) {
 
     const turno = nuevoTurno(usuario.id, inicio);
 
-    if (!(await estaEnHorarioLaboral(barbero, turno.inicio, turno.fin))) {
+    if (!estaEnHorarioLaboral(barbero, turno.inicio, turno.fin)) {
         throw crearError(400, "El turno está fuera del horario laboral del barbero");
     }
 
@@ -103,5 +104,34 @@ export async function obtenerDisponibilidad(barberoId, fecha) {
         fecha,
         duracionMinutos: DURACION_TURNO_MINUTOS,
         disponibles
+    };
+}
+
+export async function obtenerTurnoPorIdService(id, usuario) {
+    const barbero = await obtenerBarberoPorTurnoId(id);
+
+    if (!barbero) {
+        throw crearError(404, "Turno no encontrado");
+    }
+
+    const turno = barbero.turnos.find(
+        (t) => t._id.toString() === id.toLowerCase()
+    );
+
+    const esSuCliente =
+        usuario.rol === "cliente" &&
+        turno.cliente.toString() === usuario.id;
+
+    const esSuBarbero =
+        usuario.rol === "barbero" &&
+        barbero._id.toString() === usuario.id;
+
+    if (!esSuCliente && !esSuBarbero) {
+        throw crearError(403, "Sin permiso para ver este turno");
+    }
+
+    return {
+        ...turno,
+        barberoId: barbero._id
     };
 }

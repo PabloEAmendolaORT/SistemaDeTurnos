@@ -18,6 +18,17 @@ export function nuevoTurno(clienteId, inicio) {
     };
 }
 
+export async function obtenerBarberoActivo(id) {
+    if (typeof id !== "string" || !/^[0-9a-fA-F]{24}$/.test(id)) {
+        return null;
+    }
+
+    return await barberos().findOne(
+        { _id: new ObjectId(id), activo: true },
+        { projection: { password: 0 } }
+    );
+}
+
 export async function reservarTurnoAtomico(barberoId, turno) {
     return barberos().findOneAndUpdate(
         {
@@ -62,4 +73,19 @@ export async function existeTurnoActivoDelCliente(clienteId, inicio, fin) {
     );
 
     return barbero !== null;
+}
+
+export async function obtenerBarberoPorTurnoId(id) {
+    if (
+        typeof id !== "string" ||
+        !/^[a-fA-F0-9]{24}$/.test(id)
+    ) {
+        return null;
+    }
+
+    const db = getDB();
+
+    return await db.collection("barberos").findOne({
+        "turnos._id": new ObjectId(id)
+    });
 }

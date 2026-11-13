@@ -63,6 +63,22 @@ export function seSuperponen(aInicio, aFin, bInicio, bFin) {
     return aInicio < bFin && aFin > bInicio;
 }
 
+export function estaEnHorarioLaboral(barbero, inicio, fin) {
+    const desde = partesLocales(inicio);
+    const hasta = partesLocales(fin);
+
+    if (desde.dia !== hasta.dia) {
+        return false;
+    }
+
+    return (barbero.horarios ?? []).some(
+        (h) =>
+            h.dia === desde.dia &&
+            horaAMinutos(h.inicio) <= desde.minutos &&
+            hasta.minutos <= horaAMinutos(h.fin)
+    );
+}
+
 export function generarSlots({ fecha, horarios, turnos, bloqueos, ahora = new Date() }) {
     const dia = diaDeSemana(fecha);
     const activos = (turnos ?? []).filter((t) => ESTADOS_ACTIVOS.includes(t.estado));
