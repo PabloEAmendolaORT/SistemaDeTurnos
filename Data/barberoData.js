@@ -1,4 +1,5 @@
 import { getDB } from "../Config/database.js";
+import { ObjectId } from "mongodb";
 
 export async function listarBarberosActivos() {
     const db = getDB();
@@ -9,4 +10,13 @@ export async function listarBarberosActivos() {
             { projection: { password: 0, turnos: 0 } }
         )
         .toArray();
+}
+
+export async function obtenerBarberoPorId(id) {
+    const db = getDB();
+
+    return await db.collection("barberos").findOne(
+        { _id: new ObjectId(id) },
+        { projection: { password: 0, turnos: 0 } }
+    );
 }
