@@ -95,6 +95,7 @@ export async function registrarClienteService(datos) {
         email,
         telefono: telefono || null,
         password: passwordHasheada,
+        rol: "cliente",
         activo: true,
         createdAt: new Date(),
         updatedAt: new Date()
