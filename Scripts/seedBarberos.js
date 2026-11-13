@@ -20,6 +20,7 @@ try{
             apellido: "Prueba",
             email,
             password,
+            rol: "barbero",
             activo: true,
             horarios: [
                 { dia: 1, inicio: "09:00", fin: "13:00" }
