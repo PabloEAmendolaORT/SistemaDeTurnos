@@ -1,4 +1,5 @@
-import { listarBarberosActivos, obtenerBarberoPorId, actualizarHorariosBarbero } from "../Data/barberoData.js";
+import { listarBarberosActivos, obtenerBarberoPorId, actualizarHorariosBarbero, agregarBloqueoBarbero } from "../Data/barberoData.js";
+import { ObjectId } from "mongodb";
 
 export async function listarBarberosService() {
     const barberos = await listarBarberosActivos();
@@ -72,4 +73,59 @@ export async function actualizarHorariosBarberoService(id, usuario, horarios) {
     }
 
     return horarios;
+}
+
+export async function agregarBloqueoBarberoService(id, usuario, datos) {
+    if (typeof id !== "string" || !/^[a-fA-F0-9]{24}$/.test(id)) {
+        throw { status: 400, message: "El identificador del barbero no es válido"};
+    }
+
+    if (usuario?.rol !== "barbero" || usuario.id.toLowerCase() !== id.toLowerCase()) {
+        throw { status: 403, message: "Solo podes agregar bloqueos a tu propia agenda."}
+    }
+
+    const inicioTexto = datos?.inicio;
+    const finTexto = datos?.fin;
+
+    if (typeof inicioTexto !== "string" || typeof finTexto !== "string") {
+        throw { status: 400, message: "El inicio y el fin del bloqueo deben enviarse como texto."}
+    }
+
+    const inicio = new Date(inicioTexto);
+    const fin = new Date(finTexto);
+
+    if (Number.isNaN(inicio.getTime()) || Number.isNaN(fin.getTime())) {
+        throw { status: 400, message: "El inicio y el fin deben ser fechas válidas."}
+    };
+
+    const zonaAlFinal = /(?:Z|[+-]\d{2}:\d{2})$/;
+
+    if (!zonaAlFinal.test(inicioTexto) || !zonaAlFinal.test(finTexto)) {
+        throw { status:400, message: "El inicio y el fin deben incluir una zona horaria."};
+    }
+
+    if (inicio >= fin) {
+        throw { status: 400, message: "El inicio del bloqueo debe ser anterior al fin."}
+    }
+
+    const bloqueo = {
+        _id: new ObjectId(),
+        inicio,
+        fin
+    };
+
+    const resultado = await agregarBloqueoBarbero(id, bloqueo);
+
+    if (resultado.matchedCount === 0) {
+        const barbero = await obtenerBarberoPorId(id);
+
+        if (!barbero) {
+            throw { status: 404, message: "Barbero no encontrado." };
+        }
+
+        throw { status: 409, message: "El bloqueo se superpone con un turno activo."}
+    }
+
+    return bloqueo;
+
 }
