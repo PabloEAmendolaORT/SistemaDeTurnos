@@ -20,3 +20,12 @@ export async function obtenerBarberoPorId(id) {
         { projection: { password: 0, turnos: 0 } }
     );
 }
+
+export async function actualizarHorariosBarbero(id, horarios) {
+    const db = getDB();
+
+    return await db.collection("barberos").updateOne(
+        { _id: new ObjectId(id) },
+        { $set: { horarios } }
+    );
+}
