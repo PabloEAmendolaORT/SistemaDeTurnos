@@ -1,5 +1,6 @@
 import { listarBarberosActivos, obtenerBarberoPorId, actualizarHorariosBarbero, agregarBloqueoBarbero } from "../Data/barberoData.js";
 import { ObjectId } from "mongodb";
+import { esIdValido, esHoraValida, seSuperponen } from "./turnoUtils.js";
 
 export async function listarBarberosService() {
     const barberos = await listarBarberosActivos();
@@ -7,7 +8,7 @@ export async function listarBarberosService() {
 }
 
 export async function obtenerBarberoPorIdService(id) {
-    if (typeof id !== "string" || !/^[a-fA-F0-9]{24}$/.test(id)) {
+    if (!esIdValido(id)) {
         throw { status: 400, message: "El identificador del barbero no es válido."};
     }
 
@@ -22,7 +23,7 @@ export async function obtenerBarberoPorIdService(id) {
 
 export async function actualizarHorariosBarberoService(id, usuario, horarios) {
 
-    if (typeof id !== "string" || !/^[a-fA-F0-9]{24}$/.test(id)) {
+    if (!esIdValido(id)) {
         throw { status: 400, message: "El identificador del barbero no es válido."};
     }
 
@@ -41,11 +42,9 @@ export async function actualizarHorariosBarberoService(id, usuario, horarios) {
             throw { status: 400, message: "Cada franja debe tener un dia entero entre 0 y 6."};
         }
 
-        const formatoHora = /^([01]\d|2[0-3]):[0-5]\d$/;
-
         const { inicio, fin } = franja;
 
-        if(typeof inicio !== "string" || typeof fin !== "string" || !formatoHora.test(inicio) || !formatoHora.test(fin)) {
+        if(!esHoraValida(inicio) || !esHoraValida(fin)) {
             throw { status: 400, message: "El inicio y el fin deben tener formato HH:mm."}
         };
 
@@ -60,7 +59,7 @@ export async function actualizarHorariosBarberoService(id, usuario, horarios) {
         for (let j = i + 1; j < horarios.length; j++){
             const segunda = horarios[j];
 
-            if (primera.dia === segunda.dia && primera.inicio < segunda.fin && segunda.inicio < primera.fin) {
+            if (primera.dia === segunda.dia && seSuperponen(primera.inicio, primera.fin, segunda.inicio, segunda.fin)) {
                 throw { status: 400, message: "Las franjas de un mismo día no pueden superponerse."}
             }
         }
@@ -76,7 +75,7 @@ export async function actualizarHorariosBarberoService(id, usuario, horarios) {
 }
 
 export async function agregarBloqueoBarberoService(id, usuario, datos) {
-    if (typeof id !== "string" || !/^[a-fA-F0-9]{24}$/.test(id)) {
+    if (!esIdValido(id)) {
         throw { status: 400, message: "El identificador del barbero no es válido"};
     }
 

@@ -100,11 +100,17 @@ export function generarSlots({ fecha, horarios, turnos, bloqueos, ahora = new Da
 
             if (inicio <= ahora) continue;
             if (activos.some((t) => seSuperponen(inicio, fin, t.inicio, t.fin))) continue;
-            if ((bloqueos ?? []).some((b) => seSuperponen(inicio, fin, b.inicio, b.fin))) continue;
-
+            if (tieneBloqueo({ bloqueos }, inicio, fin)) continue;
             slots.push({ hora: minutosAHora(m), inicio, fin });
         }
     }
 
     return slots;
+}
+
+
+export function tieneBloqueo(barbero, inicio, fin) {
+    return (barbero.bloqueos ?? []).some((bloqueo) =>
+        seSuperponen(inicio, fin, bloqueo.inicio, bloqueo.fin)
+    );
 }

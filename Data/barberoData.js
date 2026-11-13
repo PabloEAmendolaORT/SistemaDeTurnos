@@ -48,3 +48,12 @@ export async function agregarBloqueoBarbero(id, bloqueo) {
         { $push: { bloqueos: bloqueo } }
     );
 }
+
+export async function obtenerBarberoActivo(id) {
+    const db = getDB();
+
+    return await db.collection("barberos").findOne(
+        { _id: new ObjectId(id), activo: true },
+        { projection: { password: 0 } }
+    );
+}
