@@ -89,3 +89,12 @@ export async function obtenerBarberoPorTurnoId(id) {
         "turnos._id": new ObjectId(id)
     });
 }
+
+export async function obtenerBarberosConTurnosDeCliente(clienteId) {
+    const db = getDB();
+
+    return await db.collection("barberos").find(
+        { "turnos.cliente": new ObjectId(clienteId) },
+        { projection: { nombre: 1, apellido: 1, turnos: 1 } }
+    ).toArray();
+}

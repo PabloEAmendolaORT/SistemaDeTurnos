@@ -9,6 +9,8 @@ import {
     actualizarClienteController
 } from "../Controller/clienteController.js";
 
+import { obtenerTurnosClienteController } from "../Controller/turnoController.js";
+
 const router = Router();
 
 router.get(
@@ -23,6 +25,13 @@ router.put(
     authMiddleware,
     rolesMiddleware("cliente"),
     actualizarClienteController
+);
+
+router.get(
+    "/:id/turnos",
+    authMiddleware,
+    rolesMiddleware("cliente"),
+    obtenerTurnosClienteController
 );
 
 export default router;

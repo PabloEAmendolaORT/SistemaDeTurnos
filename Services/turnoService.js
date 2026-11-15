@@ -1,12 +1,15 @@
 import { obtenerClientePorId } from "../Data/clienteData.js";
 import {
     DURACION_TURNO_MINUTOS,
+    ESTADOS_ACTIVOS,
     nuevoTurno,
     obtenerBarberoActivo,
     obtenerBarberoPorTurnoId,
     reservarTurnoAtomico,
-    existeTurnoActivoDelCliente
+    existeTurnoActivoDelCliente,
+    obtenerBarberosConTurnosDeCliente
 } from "../Data/turnoData.js";
+
 import {
     crearError,
     esIdValido,
@@ -139,4 +142,52 @@ export async function obtenerTurnoPorIdService(id, usuario) {
         ...turno,
         barberoId: barbero._id
     };
+}
+
+export async function obtenerTurnosClienteService(id, usuario) {
+    if (!esIdValido(id)) {
+        throw crearError(400, "El identificador del cliente no es válido");
+    }
+
+    if (usuario.rol !== "cliente" || usuario.id.toLowerCase() !== id.toLowerCase()) {
+        throw crearError(403, "Solo podes consultar tus turnos");
+    }
+
+    const cliente = await obtenerClientePorId(id);
+
+    if (!cliente) {
+        throw crearError(404, "Cliente no encontrado");
+    }
+
+    const barberos = await obtenerBarberosConTurnosDeCliente(id);
+    const ahora = new Date();
+
+    const proximos = [];
+    const historial = [];
+
+    for (const barbero of barberos) {
+        for (const turno of barbero.turnos) {
+            if (turno.cliente.toString() === id.toLowerCase()) {
+                const turnoConBarbero = {
+                    ...turno,
+                    barbero: {
+                        _id: barbero._id,
+                        nombre: barbero.nombre,
+                        apellido: barbero.apellido
+                    }
+                };
+
+                if (turno.inicio > ahora && ESTADOS_ACTIVOS.includes(turno.estado)) {
+                    proximos.push(turnoConBarbero);
+                } else {
+                    historial.push(turnoConBarbero);
+                }
+            }
+        }
+    }
+
+    proximos.sort((a, b) => a.inicio - b.inicio);
+    historial.sort((a, b) => b.inicio - a.inicio);
+
+    return { proximos, historial };
 }
