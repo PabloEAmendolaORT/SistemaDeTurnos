@@ -108,6 +108,11 @@ export async function obtenerDisponibilidad(barberoId, fecha) {
 }
 
 export async function obtenerTurnoPorIdService(id, usuario) {
+
+    if (!esIdValido(id)) {
+        throw crearError(400, "El identificador del turno no es válido");
+    }
+
     const barbero = await obtenerBarberoPorTurnoId(id);
 
     if (!barbero) {
