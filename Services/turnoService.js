@@ -7,7 +7,8 @@ import {
     obtenerBarberoPorTurnoId,
     reservarTurnoAtomico,
     existeTurnoActivoDelCliente,
-    obtenerBarberosConTurnosDeCliente
+    obtenerBarberosConTurnosDeCliente,
+    actualizarEstadoTurno
 } from "../Data/turnoData.js";
 
 import {
@@ -19,6 +20,14 @@ import {
     estaEnHorarioLaboral,
     generarSlots
 } from "./turnoUtils.js";
+
+const TRANSICIONES = {
+    pendiente: ["confirmado", "cancelado"],
+    confirmado: ["completado", "ausente", "cancelado"],
+    completado: [],
+    cancelado: [],
+    ausente: []
+};
 
 export async function reservarTurno(usuario, { barberoId, fecha, hora } = {}) {
     const errores = [];
@@ -190,4 +199,52 @@ export async function obtenerTurnosClienteService(id, usuario) {
     historial.sort((a, b) => b.inicio - a.inicio);
 
     return { proximos, historial };
+}
+
+export async function actualizarEstadoTurnoService(id, usuario, estadoNuevo) {
+    if (!esIdValido(id)) {
+        throw crearError(400, "El identificador del turno no es válido");
+    }
+
+    if (!Object.keys(TRANSICIONES).includes(estadoNuevo)) {
+        throw crearError(400, "El estado enviado no es válido", [
+            "Valores posibles: " + Object.keys(TRANSICIONES).join(", ")
+        ]);
+    }
+
+    const barbero = await obtenerBarberoPorTurnoId(id);
+
+    if (!barbero) {
+        throw crearError(404, "Turno no encontrado");
+    }
+
+    if (barbero._id.toString() !== usuario.id.toLowerCase()) {
+        throw crearError(403, "Solo el barbero asignado puede cambiar el estado del turno");
+    }
+
+    const turno = barbero.turnos.find(
+        (t) => t._id.toString() === id.toLowerCase()
+    );
+
+    const permitidos = TRANSICIONES[turno.estado];
+
+    if (permitidos.length === 0) {
+        throw crearError(400, `El turno está ${turno.estado} y ya no puede modificarse`);
+    }
+
+    if (!permitidos.includes(estadoNuevo)) {
+        throw crearError(400, `No se puede pasar de ${turno.estado} a ${estadoNuevo}`);
+    }
+
+    const resultado = await actualizarEstadoTurno(id, turno.estado, estadoNuevo);
+
+    if (resultado.matchedCount === 0) {
+        throw crearError(409, "El estado del turno cambió mientras se procesaba, volver a consultar");
+    }
+
+    return {
+        ...turno,
+        estado: estadoNuevo,
+        barberoId: barbero._id
+    };
 }

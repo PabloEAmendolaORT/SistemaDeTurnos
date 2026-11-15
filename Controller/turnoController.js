@@ -2,7 +2,8 @@ import {
     reservarTurno,
     obtenerDisponibilidad,
     obtenerTurnoPorIdService,
-    obtenerTurnosClienteService
+    obtenerTurnosClienteService,
+    actualizarEstadoTurnoService 
 } from "../Services/turnoService.js";
 
 export async function reservar(req, res, next) {
@@ -51,6 +52,23 @@ export async function obtenerTurnosClienteController(req, res, next) {
         return res.status(200).json({
             message: "Turnos del cliente obtenidos correctamente",
             data: turnos
+        });
+    } catch (error) {
+        next(error);
+    }
+}
+
+export async function actualizarEstadoTurnoController(req, res, next) {
+    try {
+        const turno = await actualizarEstadoTurnoService(
+            req.params.id,
+            req.user,
+            req.body?.estado
+        );
+
+        return res.status(200).json({
+            message: "Estado del turno fue actualizado",
+            data: turno
         });
     } catch (error) {
         next(error);
