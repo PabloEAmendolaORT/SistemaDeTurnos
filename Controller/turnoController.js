@@ -3,7 +3,8 @@ import {
     obtenerDisponibilidad,
     obtenerTurnoPorIdService,
     obtenerTurnosClienteService,
-    actualizarEstadoTurnoService 
+    actualizarEstadoTurnoService,
+    cancelarTurnoService
 } from "../Services/turnoService.js";
 
 export async function reservar(req, res, next) {
@@ -68,6 +69,19 @@ export async function actualizarEstadoTurnoController(req, res, next) {
 
         return res.status(200).json({
             message: "Estado del turno fue actualizado",
+            data: turno
+        });
+    } catch (error) {
+        next(error);
+    }
+}
+
+export async function cancelarTurnoController(req, res, next) {
+    try {
+        const turno = await cancelarTurnoService(req.params.id, req.user);
+
+        return res.status(200).json({
+            message: "El turno fue cancelado",
             data: turno
         });
     } catch (error) {
