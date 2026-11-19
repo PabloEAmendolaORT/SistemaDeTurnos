@@ -3,7 +3,6 @@ import { authMiddleware } from "../Middlewares/auth.middleware.js"
 import { rolesMiddleware } from "../Middlewares/roles.middleware.js"
 import { actualizarHorariosBarberoController, listarBarberosController, obtenerBarberoPorIdController, agregarBloqueoBarberoController, obtenerAgendaBarberoController } from "../Controller/barberoController.js";
 import { disponibilidad } from "../Controller/turnoController.js";
-import { obtenerAgendaBarbero } from "../Data/barberoData.js";
 
 const router = Router();
 router.get("/", listarBarberosController);
