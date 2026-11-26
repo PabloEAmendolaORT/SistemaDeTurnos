@@ -1,6 +1,7 @@
 import { listarBarberosActivos, obtenerBarberoPorId, actualizarHorariosBarbero, agregarBloqueoBarbero, obtenerAgendaBarbero } from "../Data/barberoData.js";
 import { ObjectId } from "mongodb";
 import { esIdValido, esHoraValida, seSuperponen, esFechaValida, construirFecha } from "./turnoUtils.js";
+import { obtenerClientePorId } from "../Data/clienteData.js";
 
 export async function listarBarberosService() {
     const barberos = await listarBarberosActivos();
@@ -155,6 +156,31 @@ export async function obtenerAgendaBarberoService(id, usuario, fecha) {
     if (!agenda) {
         throw { status: 404, message: "Barbero no encontrado." };
     }
+    
+    const turnos = [];
 
-    return agenda;
+    for (const turno of agenda.turnos) {
+        const cliente = await obtenerClientePorId(turno.cliente.toString());
+
+        turnos.push({
+            ...turno,
+            cliente: cliente
+                ? {
+                    _id: cliente._id,
+                    nombre: cliente.nombre,
+                    apellido: cliente.apellido,
+                    email: cliente.email,
+                    telefono: cliente.telefono ?? null
+                }
+                : { _id: turno.cliente }
+        });
+    }
+
+    turnos.sort((a, b) => a.inicio - b.inicio);
+
+    return {
+        barberoId: agenda._id,
+        fecha,
+        turnos
+    };
 }

@@ -1,12 +1,16 @@
 import { obtenerClientePorId } from "../Data/clienteData.js";
 import {
     DURACION_TURNO_MINUTOS,
+    ESTADOS_ACTIVOS,
     nuevoTurno,
     obtenerBarberoActivo,
     obtenerBarberoPorTurnoId,
     reservarTurnoAtomico,
-    existeTurnoActivoDelCliente
+    existeTurnoActivoDelCliente,
+    obtenerBarberosConTurnosDeCliente,
+    actualizarEstadoTurno
 } from "../Data/turnoData.js";
+
 import {
     crearError,
     esIdValido,
@@ -16,6 +20,14 @@ import {
     estaEnHorarioLaboral,
     generarSlots
 } from "./turnoUtils.js";
+
+const TRANSICIONES = {
+    pendiente: ["confirmado", "cancelado"],
+    confirmado: ["completado", "ausente", "cancelado"],
+    completado: [],
+    cancelado: [],
+    ausente: []
+};
 
 export async function reservarTurno(usuario, { barberoId, fecha, hora } = {}) {
     const errores = [];
@@ -108,6 +120,11 @@ export async function obtenerDisponibilidad(barberoId, fecha) {
 }
 
 export async function obtenerTurnoPorIdService(id, usuario) {
+
+    if (!esIdValido(id)) {
+        throw crearError(400, "El identificador del turno no es válido");
+    }
+
     const barbero = await obtenerBarberoPorTurnoId(id);
 
     if (!barbero) {
@@ -132,6 +149,138 @@ export async function obtenerTurnoPorIdService(id, usuario) {
 
     return {
         ...turno,
+        barberoId: barbero._id
+    };
+}
+
+export async function obtenerTurnosClienteService(id, usuario) {
+    if (!esIdValido(id)) {
+        throw crearError(400, "El identificador del cliente no es válido");
+    }
+
+    if (usuario.rol !== "cliente" || usuario.id.toLowerCase() !== id.toLowerCase()) {
+        throw crearError(403, "Solo podes consultar tus turnos");
+    }
+
+    const cliente = await obtenerClientePorId(id);
+
+    if (!cliente) {
+        throw crearError(404, "Cliente no encontrado");
+    }
+
+    const barberos = await obtenerBarberosConTurnosDeCliente(id);
+    const ahora = new Date();
+
+    const proximos = [];
+    const historial = [];
+
+    for (const barbero of barberos) {
+        for (const turno of barbero.turnos) {
+            if (turno.cliente.toString() === id.toLowerCase()) {
+                const turnoConBarbero = {
+                    ...turno,
+                    barbero: {
+                        _id: barbero._id,
+                        nombre: barbero.nombre,
+                        apellido: barbero.apellido
+                    }
+                };
+
+                if (turno.inicio > ahora && ESTADOS_ACTIVOS.includes(turno.estado)) {
+                    proximos.push(turnoConBarbero);
+                } else {
+                    historial.push(turnoConBarbero);
+                }
+            }
+        }
+    }
+
+    proximos.sort((a, b) => a.inicio - b.inicio);
+    historial.sort((a, b) => b.inicio - a.inicio);
+
+    return { proximos, historial };
+}
+
+export async function actualizarEstadoTurnoService(id, usuario, estadoNuevo) {
+    if (!esIdValido(id)) {
+        throw crearError(400, "El identificador del turno no es válido");
+    }
+
+    if (!Object.keys(TRANSICIONES).includes(estadoNuevo)) {
+        throw crearError(400, "El estado enviado no es válido", [
+            "Valores posibles: " + Object.keys(TRANSICIONES).join(", ")
+        ]);
+    }
+
+    const barbero = await obtenerBarberoPorTurnoId(id);
+
+    if (!barbero) {
+        throw crearError(404, "Turno no encontrado");
+    }
+
+    if (barbero._id.toString() !== usuario.id.toLowerCase()) {
+        throw crearError(403, "Solo el barbero asignado puede cambiar el estado del turno");
+    }
+
+    const turno = barbero.turnos.find(
+        (t) => t._id.toString() === id.toLowerCase()
+    );
+
+    const permitidos = TRANSICIONES[turno.estado];
+
+    if (permitidos.length === 0) {
+        throw crearError(400, `El turno está ${turno.estado} y ya no puede modificarse`);
+    }
+
+    if (!permitidos.includes(estadoNuevo)) {
+        throw crearError(400, `No se puede pasar de ${turno.estado} a ${estadoNuevo}`);
+    }
+
+    const resultado = await actualizarEstadoTurno(id, turno.estado, estadoNuevo);
+
+    if (resultado.matchedCount === 0) {
+        throw crearError(409, "El estado del turno cambió mientras se procesaba, volver a consultar");
+    }
+
+    return {
+        ...turno,
+        estado: estadoNuevo,
+        barberoId: barbero._id
+    };
+}
+
+export async function cancelarTurnoService(id, usuario) {
+    if (!esIdValido(id)) {
+        throw crearError(400, "El identificador del turno no es válido");
+    }
+
+    const barbero = await obtenerBarberoPorTurnoId(id);
+
+    if (!barbero) {
+        throw crearError(404, "Turno no encontrado");
+    }
+
+    const turno = barbero.turnos.find(
+        (t) => t._id.toString() === id.toLowerCase()
+    );
+
+    if (turno.cliente.toString() !== usuario.id.toLowerCase()) {
+        throw crearError(403, "Solo podés cancelar tus propios turnos");
+    }
+
+    if (!TRANSICIONES[turno.estado].includes("cancelado")) {
+        throw crearError(400, `El turno está ${turno.estado} y no puede cancelarse`);
+    }
+
+    const resultado = await actualizarEstadoTurno(id, turno.estado, "cancelado");
+
+    if (resultado.matchedCount === 0) {
+        throw crearError(409, "El estado del turno cambió mientras se procesaba, volvé a consultarlo");
+    }
+
+    return {
+        ...turno,
+        estado: "cancelado",
         barberoId: barbero._id
     };
 }
